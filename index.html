@@ -865,36 +865,38 @@ const longFr = d => { const x = new Date(d + "T12:00:00"); return `${x.getDate()
 const cs = (p, v) => { try { p.setCharSpace(v); } catch (e) {} };
 const ensure = (p, y, h) => { if (y + h > 281) { p.addPage(); return 20; } return y; };
 const plainNum = n => money(n).replace(" FCFA", "");
+let K = 1;                                    // facteur de compacité : 1 = normal, plus petit = tout tient sur une page
+const kf = v => Math.max(v * K, 6);
 function pdfTop(p, wImg) {
-  const w = wImg || 40, h = w * logoRatio;
+  const w = (wImg || 40) * K, h = w * logoRatio;
   try { p.addImage(LOGO_FULL, "PNG", PW / 2 - w / 2, 9, w, h); } catch (e) {}
-  const y = 9 + h + 5;
-  p.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(...GREY); cs(p, 0.5); p.text(accroche().toUpperCase(), PW / 2, y, { align: "center" }); cs(p, 0);
-  return y + (w < 40 ? 7 : 10);
+  const y = 9 + h + 4.5;
+  p.setFont("helvetica", "normal").setFontSize(kf(7.5)).setTextColor(...GREY); cs(p, 0.5); p.text(accroche().toUpperCase(), PW / 2, y, { align: "center" }); cs(p, 0);
+  return y + 4 + 6 * K;
 }
 function pdfTitleBlock(p, y, label, title, pairs) {
-  p.setFont("helvetica", "bold").setFontSize(9.5).setTextColor(...BURG); cs(p, 0.7); p.text(label, PM + 2, y + 4); cs(p, 0);
-  let fs = 25; p.setFont("times", "bold").setFontSize(fs); let tl = p.splitTextToSize(title, 104);
-  if (tl.length > 3) { fs = 18; p.setFontSize(fs); tl = p.splitTextToSize(title, 104); }
-  p.setTextColor(...INK); p.text(tl, PM + 2, y + 13, { lineHeightFactor: 1.12 });
-  const yl = y + 13 + (tl.length - 1) * fs * 0.3528 * 1.12 + 4;
-  let yr = y + 4;
-  pairs.forEach(([k, v]) => { p.setFont("helvetica", "bold").setFontSize(8).setTextColor(...GREY).text(k, 140, yr); p.setFont("helvetica", "normal").setFontSize(10.5).setTextColor(...INK).text(String(v), 140, yr + 5.5); yr += 12.5; });
-  const yEnd = Math.max(yl, yr) + 2;
+  p.setFont("helvetica", "bold").setFontSize(kf(9.5)).setTextColor(...BURG); cs(p, 0.7); p.text(label, PM + 2, y + 4); cs(p, 0);
+  let fs = Math.max(25 * K, 17); p.setFont("times", "bold").setFontSize(fs); let tl = p.splitTextToSize(title, 104);
+  if (tl.length > 3) { fs = 17; p.setFontSize(fs); tl = p.splitTextToSize(title, 104); }
+  p.setTextColor(...INK); p.text(tl, PM + 2, y + 4 + 9 * K, { lineHeightFactor: 1.12 });
+  const yl = y + 4 + 9 * K + (tl.length - 1) * fs * 0.3528 * 1.12 + 3;
+  let yr = y + 4; const step = Math.max(12.5 * K, 9.6);
+  pairs.forEach(([k, v]) => { p.setFont("helvetica", "bold").setFontSize(kf(8)).setTextColor(...GREY).text(k, 140, yr); p.setFont("helvetica", "normal").setFontSize(kf(10.5)).setTextColor(...INK).text(String(v), 140, yr + 5 * K + .5); yr += step; });
+  const yEnd = Math.max(yl, yr) + 1;
   p.setDrawColor(...LINE).setLineWidth(0.3).line(PM, yEnd, PR, yEnd);
-  return yEnd + 8;
+  return yEnd + 7 * K + 1;
 }
 function colRender(p, items, x, w, y, draw) {
   items.forEach((it, i) => {
     if (it.k === "label") {
-      y += i ? 3 : 0;
-      if (draw) { p.setFont("helvetica", "bold").setFontSize(8).setTextColor(...GREY); cs(p, 0.4); p.text(it.t, x, y + 3); cs(p, 0); }
-      y += 6;
+      y += i ? 3 * K : 0;
+      if (draw) { p.setFont("helvetica", "bold").setFontSize(kf(8)).setTextColor(...GREY); cs(p, 0.4); p.text(it.t, x, y + 3); cs(p, 0); }
+      y += 5.5 * K + .5;
     } else {
-      const big = it.k === "big", fs = big ? 14 : 10.5;
+      const big = it.k === "big", fs = kf(big ? 14 : 10.5);
       p.setFont("helvetica", big ? "bold" : "normal").setFontSize(fs).setTextColor(...INK);
       const lines = p.splitTextToSize(it.t, w);
-      if (draw) p.text(lines, x, y + 3.8);
+      if (draw) p.text(lines, x, y + 3.6);
       y += lines.length * fs * 0.3528 * 1.28;
     }
   });
@@ -912,61 +914,61 @@ function pdfParties(p, y, d, rightLabel) {
   if (d.clientAdresse) R.push({ k: "text", t: d.clientAdresse });
   if (d.clientNiu) R.push({ k: "label", t: "N° contribuable" }, { k: "text", t: d.clientNiu });
   if (d.clientTel) R.push({ k: "label", t: "Tél / WhatsApp" }, { k: "text", t: d.clientTel });
-  const lx = PM + 6, lw = 78, rx = PM + 96, rw = 78, top = y + 6;
-  const h = Math.max(colRender(p, L, lx, lw, top, false), colRender(p, R, rx, rw, top, false)) - y + 4;
-  y = ensure(p, y, h + 4); const t2 = y + 6;
-  p.setFillColor(...CREAM).rect(PM, y, PR - PM, h, "F"); p.setDrawColor(...LINE).setLineWidth(0.3).line(PM + 91, y + 5, PM + 91, y + h - 5);
+  const pad = 5 * K + 1, lx = PM + 6, lw = 78, rx = PM + 96, rw = 78, top = y + pad;
+  const h = Math.max(colRender(p, L, lx, lw, top, false), colRender(p, R, rx, rw, top, false)) - y + pad - 1;
+  y = ensure(p, y, h + 4); const t2 = y + pad;
+  p.setFillColor(...CREAM).rect(PM, y, PR - PM, h, "F"); p.setDrawColor(...LINE).setLineWidth(0.3).line(PM + 91, y + 4, PM + 91, y + h - 4);
   colRender(p, L, lx, lw, t2, true); colRender(p, R, rx, rw, t2, true);
-  return y + h + 9;
+  return y + h + 7 * K + 1;
 }
 function pdfH2(p, y, title, intro) {
-  y = ensure(p, y, 24); p.setFont("times", "bold").setFontSize(16).setTextColor(...INK); const tl = p.splitTextToSize(title, PR - PM - 4); p.text(tl, PM + 2, y + 5); y += 5 + (tl.length - 1) * 7 + 3;
-  if (intro) { p.setFont("helvetica", "normal").setFontSize(9.5).setTextColor(...GREY); const il = p.splitTextToSize(intro, PR - PM - 4); p.text(il, PM + 2, y + 2, { lineHeightFactor: 1.35 }); y += il.length * 4.6 + 2; }
-  return y + 2;
+  y = ensure(p, y, 24 * K); p.setFont("times", "bold").setFontSize(kf(16)).setTextColor(...INK); const tl = p.splitTextToSize(title, PR - PM - 4); p.text(tl, PM + 2, y + 5 * K); y += 5 * K + (tl.length - 1) * 7 * K + 3;
+  if (intro) { p.setFont("helvetica", "normal").setFontSize(kf(9.5)).setTextColor(...GREY); const il = p.splitTextToSize(intro, PR - PM - 4); p.text(il, PM + 2, y + 2, { lineHeightFactor: 1.35 }); y += il.length * 4.6 * K + 2; }
+  return y + 2 * K;
 }
 function pdfTable(p, y, head, body, colStyles, headFill, opts) {
-  const pv = (opts && opts.pad) || 4;
+  const pv = ((opts && opts.pad) || 4) * K;
   p.autoTable({ startY: y, margin: { left: PM, right: PM, top: 18, bottom: 16 }, theme: "plain", head: [head], body, columnStyles: colStyles,
-    headStyles: { fillColor: headFill, textColor: 255, font: "helvetica", fontStyle: "bold", fontSize: 8.5, cellPadding: { top: pv, bottom: pv, left: 4, right: 3 } },
-    styles: { font: "helvetica", fontSize: 10, textColor: INK, fillColor: CREAM, cellPadding: { top: pv, bottom: pv, left: 4, right: 3 }, valign: "top" },
-    didParseCell: h => { if (h.section === "body" && h.column.index === (opts && opts.greyCol)) { h.cell.styles.textColor = GREY; h.cell.styles.fontSize = 8.5; } if (opts && opts.onParse) opts.onParse(h); },
+    headStyles: { fillColor: headFill, textColor: 255, font: "helvetica", fontStyle: "bold", fontSize: kf(8.5), cellPadding: { top: pv, bottom: pv, left: 4, right: 3 } },
+    styles: { font: "helvetica", fontSize: kf(10), textColor: INK, fillColor: CREAM, cellPadding: { top: pv, bottom: pv, left: 4, right: 3 }, valign: "top" },
+    didParseCell: h => { if (h.section === "body" && h.column.index === (opts && opts.greyCol)) { h.cell.styles.textColor = GREY; h.cell.styles.fontSize = kf(8.5); } if (opts && opts.onParse) opts.onParse(h); },
     didDrawCell: h => { if (h.section === "body") { p.setDrawColor(...LINE).setLineWidth(0.25).line(h.cell.x, h.cell.y + h.cell.height, h.cell.x + h.cell.width, h.cell.y + h.cell.height); } if (opts && opts.onDraw) opts.onDraw(h); } });
   return p.lastAutoTable.finalY;
 }
 function pdfTotalBar(p, y, label, amount, fill) {
-  y = ensure(p, y + 2, 30);
-  p.setFillColor(...(fill || TOTALBG)).rect(PM, y, PR - PM, 14, "F"); p.setDrawColor(...GOLD).setLineWidth(0.5).line(PM, y, PR, y);
-  p.setFont("helvetica", "bold").setFontSize(10).setTextColor(...INK); cs(p, 0.4); p.text(String(label).toUpperCase(), PM + 4, y + 9); cs(p, 0);
-  p.setFont("times", "bold").setFontSize(18).text(amount, PR - 4, y + 9.6, { align: "right" });
-  return y + 14;
+  const bh = 14 * K; y = ensure(p, y + 2, bh + 16);
+  p.setFillColor(...(fill || TOTALBG)).rect(PM, y, PR - PM, bh, "F"); p.setDrawColor(...GOLD).setLineWidth(0.5).line(PM, y, PR, y);
+  p.setFont("helvetica", "bold").setFontSize(kf(10)).setTextColor(...INK); cs(p, 0.4); p.text(String(label).toUpperCase(), PM + 4, y + bh / 2 + 1.6); cs(p, 0);
+  p.setFont("times", "bold").setFontSize(kf(18)).text(amount, PR - 4, y + bh / 2 + 2.2, { align: "right" });
+  return y + bh;
 }
 function pdfNote(p, y, text, italic) {
-  if (!text) return y; p.setFont("helvetica", italic ? "italic" : "normal").setFontSize(8.5).setTextColor(...GREY);
-  const l = p.splitTextToSize(text, PR - PM - 4); y = ensure(p, y, l.length * 4 + 6); p.text(l, PM + 2, y + 4.5, { lineHeightFactor: 1.35 }); return y + l.length * 4 + 7;
+  if (!text) return y; p.setFont("helvetica", italic ? "italic" : "normal").setFontSize(kf(8.5)).setTextColor(...GREY);
+  const l = p.splitTextToSize(text, PR - PM - 4); y = ensure(p, y, l.length * 4 * K + 6); p.text(l, PM + 2, y + 4.5 * K, { lineHeightFactor: 1.35 }); return y + l.length * 4 * K + 6 * K + 1;
 }
 function pdfBlock(p, y, title, text) {
-  p.setFont("helvetica", "normal").setFontSize(9); const lines = p.splitTextToSize(text, PR - PM - 4);
-  y = ensure(p, y + 2, 14 + lines.length * 4.4);
-  p.setDrawColor(...LINE).setLineWidth(0.3).line(PM + 2, y, PR - 2, y); y += 6;
-  p.setFont("helvetica", "bold").setFontSize(8.5).setTextColor(...INK); cs(p, 0.5); p.text(title, PM + 2, y); cs(p, 0); y += 5;
-  p.setFont("helvetica", "normal").setFontSize(9).setTextColor(...GREY); p.text(lines, PM + 2, y, { lineHeightFactor: 1.4 });
-  return y + lines.length * 4.4 + 4;
+  p.setFont("helvetica", "normal").setFontSize(kf(9)); const lines = p.splitTextToSize(text, PR - PM - 4);
+  y = ensure(p, y + 2, (14 + lines.length * 4.4) * K);
+  p.setDrawColor(...LINE).setLineWidth(0.3).line(PM + 2, y, PR - 2, y); y += 6 * K;
+  p.setFont("helvetica", "bold").setFontSize(kf(8.5)).setTextColor(...INK); cs(p, 0.5); p.text(title, PM + 2, y); cs(p, 0); y += 5 * K;
+  p.setFont("helvetica", "normal").setFontSize(kf(9)).setTextColor(...GREY); p.text(lines, PM + 2, y, { lineHeightFactor: 1.4 });
+  return y + lines.length * 4.4 * K + 4 * K;
 }
 function pdfSign(p, y, dateTxt, d) {
-  const s = settings, h = 24; y = ensure(p, y + 2, 27);
-  const w = Math.min(52, h * (s.sigW || 2) / (s.sigH || 1));
-  p.setFont("helvetica", "bold").setFontSize(9.5).setTextColor(...INK).text("Pour " + brand(), PM + 2, y).text("Le client", PM + 102, y);
+  const s = settings, h = 24 * K; y = ensure(p, y + 2 * K, 27 * K);
+  const w = Math.min(52 * K, h * (s.sigW || 2) / (s.sigH || 1));
+  p.setFont("helvetica", "bold").setFontSize(kf(9.5)).setTextColor(...INK).text("Pour " + brand(), PM + 2, y).text("Le client", PM + 102, y);
   if (s.signature) { try { p.addImage(s.signature, "PNG", PM + 2, y + 2, w, w * (s.sigH || 1) / (s.sigW || 2)); } catch (e) {} }
-  p.setFont("helvetica", "normal").setFontSize(8.5).setTextColor(...GREY);
-  p.text("Nom : " + (d.clientNom || "……………………"), PM + 102, y + 6).text("Date : " + dateTxt, PM + 102, y + 11).text("Signature :", PM + 102, y + 16);
-  return y + 28;
+  p.setFont("helvetica", "normal").setFontSize(kf(8.5)).setTextColor(...GREY);
+  p.text("Nom : " + (d.clientNom || "……………………"), PM + 102, y + 5.5 * K + .5).text("Date : " + dateTxt, PM + 102, y + 10.5 * K + .5).text("Signature :", PM + 102, y + 15.5 * K + .5);
+  return y + 28 * K;
 }
 function pdfEnd(p, y, ref) {
   if (slogan() && y + 8 <= 286) { p.setFont("times", "normal").setFontSize(11).setTextColor(...GOLD).text(slogan(), PM + 2, y + 4); }
   const n = p.getNumberOfPages();
   for (let i = 1; i <= n; i++) { p.setPage(i); p.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(170, 160, 152).text(`${brand()}  ·  ${ref}  ·  Page ${i} / ${n}`, PW / 2, 291, { align: "center" }); }
 }
-function buildDocElegant(d, kind) {
+function docElegant(d, kind) {
   const { jsPDF } = window.jspdf, p = new jsPDF({ unit: "mm", format: "a4" }), s = settings, t = totals(d);
   const isFac = kind === "Facture", isPro = kind === "Proforma", numero = isFac ? d.factureNumero : d.numero, dt = isFac ? (d.factureDate || today()) : d.date;
   const paiements = d.paiements || [], paye = paidOf(d), reste = resteOf(d);
@@ -999,27 +1001,28 @@ function buildDocElegant(d, kind) {
     y = pdfH2(p, y + 4, "Suivi des paiements");
     if (paiements.length) y = pdfTable(p, y, ["DATE", "N° REÇU", "NATURE", "MODE", "MONTANT (FCFA)"], paiements.map(x => [fdate(x.date), x.numero, x.nature, x.mode, plainNum(num(x.montant))]), { 4: { halign: "right" } }, [90, 84, 88]);
     else y = pdfNote(p, y, "Aucun paiement enregistré à ce jour.", true);
-    y = ensure(p, y + 4, 30);
-    p.autoTable({ startY: y, margin: { left: 110, right: PM }, theme: "plain", styles: { font: "helvetica", fontSize: 10, cellPadding: 2.2, textColor: INK }, columnStyles: { 1: { halign: "right" } },
+    y = ensure(p, y + 4, 78 * K);
+    p.autoTable({ startY: y, margin: { left: 110, right: PM }, theme: "plain", styles: { font: "helvetica", fontSize: kf(10), cellPadding: 2.2 * K, textColor: INK }, columnStyles: { 1: { halign: "right" } },
       body: [["Montant total (TTC)", money(t.total)], ["Avance et paiements versés", money(paye)], [reste <= 0 ? "SOLDE : réglé" : "Reste à payer", reste <= 0 ? "0 FCFA" : money(reste)]],
       didParseCell: h => { if (h.row.index === 2 && h.section === "body") { h.cell.styles.fillColor = reste <= 0 ? [47, 107, 74] : BURG; h.cell.styles.textColor = 255; h.cell.styles.fontStyle = "bold"; } } });
     y = p.lastAutoTable.finalY + 4;
-    y = pdfBlock(p, y, "MENTIONS LÉGALES", `Prestataire : ${brand()}${s.regime ? " - " + s.regime : ""}${s.niu ? " - NIU : " + s.niu : ""}.\nRetard de paiement : pénalité de 2 % par mois de retard.\nLes fichiers et droits d'usage sont transmis après paiement intégral de la présente facture.`);
   } else if (isPro) {
     const mod = [d.echeance ? "Échéance de paiement : " + fdate(d.echeance) + "." : "", d.cond || "", s.pay ? "Moyens de paiement :\n" + s.pay : ""].filter(Boolean).join("\n");
     if (mod) y = pdfBlock(p, y, "MODALITÉS", mod);
   }
-  y = pdfSign(p, y, fdate(dt), d); pdfEnd(p, y, numero);
+  y = pdfSign(p, y, fdate(dt), d);
+  if (isFac) y = pdfBlock(p, y, "MENTIONS LÉGALES", `Prestataire : ${brand()}${s.regime ? " - " + s.regime : ""}${s.niu ? " - NIU : " + s.niu : ""}.\nRetard de paiement : pénalité de 2 % par mois de retard.\nLes fichiers et droits d'usage sont transmis après paiement intégral de la présente facture.`);
+  pdfEnd(p, y, numero);
   return { p, name: `${numero}_${(d.clientNom || "client").replace(/[^\w]+/g, "_")}.pdf` };
 }
-function buildRecuElegant(d, recu, docTotal, dejaPaye, reste) {
+function recuElegant(d, recu, docTotal, dejaPaye, reste) {
   const { jsPDF } = window.jspdf, p = new jsPDF({ unit: "mm", format: "a4" });
   let y = pdfTop(p, 24);
   y = pdfTitleBlock(p, y, "REÇU DE PAIEMENT", "Reçu de paiement", [["N° :", recu.numero], ["Date :", longFr(recu.date)], ["Document :", d.numero]]);
   y = pdfParties(p, y, d, "REÇU DE");
   y = pdfTable(p, y, ["DÉSIGNATION", "DÉTAIL"], [["La somme de", money(recu.montant)], ["En lettres", enLettres(recu.montant) + " francs CFA"], ["Mode de paiement", recu.mode], ["Nature du paiement", recu.nature], ["Document concerné", d.numero + (d.objet ? " : " + d.objet : "")]], { 0: { cellWidth: 56 } }, INK, { greyCol: -1, pad: 2.4 });
   y += 6;
-  p.autoTable({ startY: y, margin: { left: 80, right: PM }, theme: "plain", styles: { font: "helvetica", fontSize: 10, cellPadding: 2.2, textColor: INK }, columnStyles: { 1: { halign: "right", cellWidth: 40 } },
+  p.autoTable({ startY: y, margin: { left: 80, right: PM }, theme: "plain", styles: { font: "helvetica", fontSize: kf(10), cellPadding: 2.2 * K, textColor: INK }, columnStyles: { 1: { halign: "right", cellWidth: 40 } },
     body: [["Montant total du document (TTC)", money(docTotal)], ["Déjà réglé (ce paiement inclus)", money(dejaPaye)], ["Reste à payer", money(reste)]],
     didParseCell: h => { if (h.row.index === 2 && h.section === "body") { h.cell.styles.fillColor = reste <= 0 ? [47, 107, 74] : BURG; h.cell.styles.textColor = 255; h.cell.styles.fontStyle = "bold"; } } });
   y = p.lastAutoTable.finalY + 4;
@@ -1028,9 +1031,18 @@ function buildRecuElegant(d, recu, docTotal, dejaPaye, reste) {
   return { p, name: `${recu.numero}_${(d.clientNom || "client").replace(/[^\w]+/g, "_")}.pdf` };
 }
 
+
+// la facture et le reçu cherchent d'abord à tenir sur UNE page (signature avec le solde), comme dans Enky Suivi
+function fitOnePage(build) {
+  for (const k of [1, 0.93, 0.86, 0.8, 0.74]) { K = k; const r = build(); if (r.p.getNumberOfPages() === 1) { K = 1; return r; } }
+  K = 0.8; const r = build(); K = 1; return r;
+}
+const buildDocElegant = (d, kind) => kind === "Facture" ? fitOnePage(() => docElegant(d, kind)) : (K = 1, docElegant(d, kind));
+const buildRecuElegant = (d, recu, docTotal, dejaPaye, reste) => fitOnePage(() => recuElegant(d, recu, docTotal, dejaPaye, reste));
+
 // ---------- modèle « classique » : identique à Enky Suivi, aux couleurs de la marque ----------
 const CL = { RED: [125, 36, 64], INK: [43, 43, 43], GREY: [107, 107, 107], GRID: [221, 211, 211], TINT: [248, 241, 241], W: 210, M: 15 };
-const modele = () => settings.modele || "classique";
+const modele = () => settings.pdfStyle || "elegant";
 const hhmm = () => { const n = new Date(); return p2(n.getHours()) + ":" + p2(n.getMinutes()); };
 function clHeader(p) {
   const { RED, INK, GREY, M, W } = CL, R = W - M, h = 22, w = settings.logo ? Math.min(44, h / logoRatio) : 22;
@@ -1206,7 +1218,7 @@ function viewSettings() {
     ${f("s_brand", "Nom complet", brand())}${f("s_short", "Nom court (affiché dans l'application)", brandShort())}${f("s_activite", "Activité", activite())}${f("s_accroche", "Ligne sous le logo", accroche())}${f("s_slogan", "Slogan (fin des documents)", slogan())}
     ${f("s_ville", "Ville, Pays", s.ville ?? "Douala, Cameroun")}${f("s_tel", "Téléphone / WhatsApp", s.tel, 'type="tel" placeholder="+237 6XX XXX XXX"')}${f("s_email", "E-mail", s.email, 'type="email"')}${f("s_web", "Site web / réseaux", s.web)}
     ${f("s_niu", "N° contribuable (NIU)", s.niu)}${f("s_regime", "Régime fiscal", s.regime, 'placeholder="Impôt libératoire / Réel"')}
-    <label>Modèle des documents PDF</label><select id="s_modele"><option value="classique" ${modele() === "classique" ? "selected" : ""}>Classique (comme Enky Suivi)</option><option value="elegant" ${modele() === "elegant" ? "selected" : ""}>Élégant (modèle d'Aïcha)</option></select>
+    <label>Modèle des documents PDF</label><select id="s_modele"><option value="elegant" ${modele() === "elegant" ? "selected" : ""}>Modèle d'Aïcha (par défaut)</option><option value="classique" ${modele() === "classique" ? "selected" : ""}>Modèle Enky Suivi</option></select>
     <label>Moyens de paiement</label><textarea id="s_pay" placeholder="Orange Money : … / MTN MoMo : … / Banque : …">${esc(s.pay)}</textarea>
     <label>Modalités par défaut (proforma)</label><textarea id="s_cond" style="min-height:130px">${esc(s.cond ?? DEFAULT_COND)}</textarea>
     <label>Note sous les packs (budget média)</label><textarea id="s_media">${esc(s.media ?? DEFAULT_MEDIA)}</textarea>
@@ -1230,7 +1242,7 @@ async function saveSettings() {
   const pk = packs().map((_, i) => ({ nom: $("#pk_n" + i).value.trim(), prix: $("#pk_p" + i).value.trim(), duree: $("#pk_d" + i).value.trim(), contenu: $("#pk_c" + i).value.trim() })).filter(p => p.nom);
   const g = id => $("#" + id).value.trim();
   const s = { ...settings, brand: g("s_brand") || DEF_BRAND, brandShort: g("s_short") || "ALB", activite: g("s_activite"), accroche: g("s_accroche"), slogan: g("s_slogan"), ville: g("s_ville"), tel: g("s_tel"), email: g("s_email"), web: g("s_web"),
-    niu: g("s_niu"), regime: g("s_regime"), modele: $("#s_modele").value, pay: g("s_pay"), cond: $("#s_cond").value, media: $("#s_media").value, tvaTaux: num($("#s_tva").value) || 19.25, packs: pk };
+    niu: g("s_niu"), regime: g("s_regime"), pdfStyle: $("#s_modele").value, pay: g("s_pay"), cond: $("#s_cond").value, media: $("#s_media").value, tvaTaux: num($("#s_tva").value) || 19.25, packs: pk };
   try { await setDoc(doc(db, "settings", "main"), s); toast("Réglages enregistrés."); } catch (e) { toast("Échec : " + e.code); }
 }
 let drawing = false, pad, pctx, hasInk = false;

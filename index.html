@@ -691,7 +691,7 @@ function docCard(d) {
   <div class="row" style="margin:8px 0 0"><b style="font-family:var(--display);font-size:22px">${money(t.total)}</b><span class="sp"></span><span class="muted">${fdate(d.date)}</span></div>
   ${paye > 0 ? `<div class="muted" style="margin-top:4px">Réglé : ${money(paye)} — Reste : <b class="${reste > 0 ? "" : "paid"}">${money(reste)}</b> · <a href="#" data-act="paiements" data-id="${d.id}">détail des paiements</a></div>` : ""}
   <div class="row" style="margin-top:10px">${pdfBtns("pdf", d.id, isPro ? "Proforma PDF" : "Devis PDF", "")}<button class="btn sm grey" data-act="editDoc" data-id="${d.id}">Modifier</button></div>
-  <div class="row" style="margin-top:8px">${isPro ? "" : `<button class="btn sm alt" data-act="toProforma" data-id="${d.id}">→ Proforma</button>`}<button class="btn sm" data-act="newRecu" data-id="${d.id}">Avance / paiement</button>${reste > 0 ? `<button class="btn sm" data-act="solder" data-id="${d.id}">Solder</button>` : badge("Soldé", "ok")}</div>
+  <div class="row" style="margin-top:8px">${isPro ? "" : `<button class="btn sm alt" data-act="toProforma" data-id="${d.id}">→ Proforma</button>`}${reste > 0 ? `<button class="btn sm" data-act="newRecu" data-id="${d.id}">Avance / paiement</button><button class="btn sm" data-act="solder" data-id="${d.id}">Solder</button>` : badge("Soldé : aucun encaissement possible", "ok")}</div>
   <div class="row" style="margin-top:8px">${pdfBtns("facture", d.id, "Facture", "alt")}<span class="sp"></span><button class="btn sm danger" data-act="delDoc" data-id="${d.id}" aria-label="Supprimer">Supprimer</button></div></div>`;
 }
 const pdfBtns = (act, id, label, cls) => IS_MOBILE
@@ -792,7 +792,7 @@ function payCard(d) {
   return `<div class="card"><div class="row" style="flex-wrap:nowrap"><div style="flex:1;min-width:0"><b style="font-size:17px">${esc(d.clientNom)}</b><div class="muted">${esc(d.numero)}${d.objet ? " · " + esc(d.objet) : ""}</div></div>${late ? badge("En retard", "bad") : ""}</div>
   <div class="row" style="margin:8px 0 0"><span class="muted">Total ${money(totals(d).total)} · réglé ${money(paidOf(d))}</span><span class="sp"></span><b style="font-family:var(--display);font-size:22px">${money(reste)}</b></div>
   <div class="muted">${d.echeance ? `Échéance : <span class="${late ? "late" : ""}">${fdate(d.echeance)}</span>` : "Pas d'échéance"}${nb ? ` · relancé ${nb} fois (dernière le ${fdate(d.relances[nb - 1])})` : ""}${paidOf(d) > 0 ? ` · <a href="#" data-act="paiements" data-id="${d.id}">détail des paiements</a>` : ""}</div>
-  <div class="row" style="margin-top:10px"><button class="btn sm" data-act="newRecu" data-id="${d.id}">Avance / paiement</button><button class="btn sm" data-act="solder" data-id="${d.id}">Solder</button><button class="btn sm alt" data-act="relancer" data-id="${d.id}">Relancer</button><button class="btn sm grey" data-act="editDoc" data-id="${d.id}">Échéance</button></div></div>`;
+  <div class="row" style="margin-top:10px">${reste > 0 ? `<button class="btn sm" data-act="newRecu" data-id="${d.id}">Avance / paiement</button><button class="btn sm" data-act="solder" data-id="${d.id}">Solder</button>` : badge("Soldé", "ok")}<button class="btn sm alt" data-act="relancer" data-id="${d.id}">Relancer</button><button class="btn sm grey" data-act="editDoc" data-id="${d.id}">Échéance</button></div></div>`;
 }
 function viewPaiements() {
   const due = activeDocs().filter(d => collectible(d) && resteOf(d) > 0).sort((a, b) => (a.echeance || "9999").localeCompare(b.echeance || "9999"));
@@ -809,9 +809,10 @@ async function relancer(id) {
 }
 function recuForm(docId) {
   const d = docs.find(x => x.id === docId); if (!d) return; const t = totals(d), paye = paidOf(d), reste = resteOf(d);
+  if (reste <= 0) return toast("Ce document est déjà soldé : aucun nouvel encaissement possible.");
   edit = { docId };
   openSheet(`<h3>Encaisser un paiement</h3><p class="muted">${esc(d.numero)} · ${esc(d.clientNom)}</p>
-  <label>Montant reçu (FCFA)</label><input id="r_montant" inputmode="numeric" value="${reste || t.total}">
+  <label>Montant reçu (FCFA) · maximum ${money(reste)}</label><input id="r_montant" inputmode="numeric" value="${reste}">
   <label>Mode de paiement</label><select id="r_mode">${selectOpts(MODES, "Orange Money")}</select>
   <label>Nature du paiement</label><select id="r_nature"><option ${paye === 0 ? "selected" : ""}>Acompte</option><option>Paiement intermédiaire</option><option ${paye > 0 ? "selected" : ""}>Solde final</option><option>Paiement intégral</option></select>
   <label>Date</label><input id="r_date" type="date" value="${today()}">
@@ -819,15 +820,26 @@ function recuForm(docId) {
   <div class="row" style="margin-top:14px"><button class="btn" data-act="saveRecu">Enregistrer + reçu PDF</button><button class="btn grey" data-act="closeSheet">Annuler</button></div>`);
 }
 async function addPayment(d, montant, mode, nature, date) {
-  const numero = await nextNumber("REC", date.slice(0, 4)), recu = { numero, date, montant, mode, nature };
-  const paiements = [...(d.paiements || []), recu];
-  await updateDoc(doc(db, "documents", d.id), { paiements, statut: "Accepté" });
-  return { recu, paiements, total: totals(d).total };
+  // lecture des données À JOUR dans la base (et non de l'écran) : impossible de dépasser le reste à payer, même avec un double clic
+  const dref = doc(db, "documents", d.id), yr = date.slice(0, 4), cref = doc(db, "counters", "REC-" + yr);
+  return runTransaction(db, async tx => {
+    const ds = await tx.get(dref), cs = await tx.get(cref);
+    if (!ds.exists()) throw Object.assign(new Error("introuvable"), { code: "introuvable" });
+    const fresh = { ...ds.data(), id: d.id }, total = totals(fresh).total, reste = Math.max(total - paidOf(fresh), 0);
+    if (reste <= 0) throw Object.assign(new Error("soldé"), { code: "solde" });
+    if (montant > reste) throw Object.assign(new Error("dépasse"), { code: "depasse", reste });
+    const n = (cs.exists() ? cs.data().n : 0) + 1, numero = `REC-${yr}-${String(n).padStart(3, "0")}`;
+    const recu = { numero, date, montant, mode, nature }, paiements = [...(fresh.paiements || []), recu];
+    tx.set(cref, { n }); tx.update(dref, { paiements, statut: "Accepté" });
+    return { recu, paiements, total };
+  });
 }
 async function saveRecu() {
   const montant = num($("#r_montant").value), mode = $("#r_mode").value, nature = $("#r_nature").value, date = $("#r_date").value || today();
   if (!montant) return toast("Indiquez le montant reçu.");
   const d = docs.find(x => x.id === edit.docId); if (!d) return;
+  if (resteOf(d) <= 0) { closeSheet(); return toast("Ce document est déjà soldé : aucun nouvel encaissement possible."); }
+  if (montant > resteOf(d)) return toast(`Le montant dépasse le reste à payer (${money(resteOf(d))}).`);
   closeSheet();
   return pdfJob("Génération du reçu en cours…", null, async () => {
     const { recu, paiements, total } = await addPayment(d, montant, mode, nature, date), paye = paiements.reduce((a, p) => a + num(p.montant), 0);
@@ -1020,7 +1032,7 @@ function recuElegant(d, recu, docTotal, dejaPaye, reste) {
   let y = pdfTop(p, 24);
   y = pdfTitleBlock(p, y, "REÇU DE PAIEMENT", "Reçu de paiement", [["N° :", recu.numero], ["Date :", longFr(recu.date)], ["Document :", d.numero]]);
   y = pdfParties(p, y, d, "REÇU DE");
-  y = pdfTable(p, y, ["DÉSIGNATION", "DÉTAIL"], [["La somme de", money(recu.montant)], ["En lettres", enLettres(recu.montant) + " francs CFA"], ["Mode de paiement", recu.mode], ["Nature du paiement", recu.nature], ["Document concerné", d.numero + (d.objet ? " : " + d.objet : "")]], { 0: { cellWidth: 56 } }, INK, { greyCol: -1, pad: 2.4 });
+  y = pdfTable(p, y, ["DÉSIGNATION", "DÉTAIL"], [["La somme de", money(recu.montant)], ["En lettres", cap(enLettres(recu.montant)) + " francs CFA"], ["Mode de paiement", recu.mode], ["Nature du paiement", recu.nature], ["Document concerné", d.numero + (d.objet ? " : " + d.objet : "")]], { 0: { cellWidth: 56 } }, INK, { greyCol: -1, pad: 2.4 });
   y += 6;
   p.autoTable({ startY: y, margin: { left: 80, right: PM }, theme: "plain", styles: { font: "helvetica", fontSize: kf(10), cellPadding: 2.2 * K, textColor: INK }, columnStyles: { 1: { halign: "right", cellWidth: 40 } },
     body: [["Montant total du document (TTC)", money(docTotal)], ["Déjà réglé (ce paiement inclus)", money(dejaPaye)], ["Reste à payer", money(reste)]],
@@ -1163,7 +1175,7 @@ function buildDocClassic(d, kind) {
 function buildRecuClassic(d, recu, docTotal, dejaPaye, reste) {
   const { jsPDF } = window.jspdf, p = new jsPDF({ unit: "mm", format: "a4" }), { RED, INK, GRID, TINT, W, M } = CL, R = W - M;
   clHeader(p); clBand(p, "REÇU DE PAIEMENT", `N° ${recu.numero}   |   Date : ${fdate(recu.date)} à ${hhmm()}`);
-  const rows1 = [["Reçu de", d.clientNom + (d.clientEntreprise ? " (" + d.clientEntreprise + ")" : "")], ["La somme de", money(recu.montant)], ["En lettres", enLettres(recu.montant) + " francs CFA"], ["Mode de paiement", recu.mode], ["Nature du paiement", recu.nature], ["Document concerné", d.numero + (d.objet ? " — " + d.objet : "")]];
+  const rows1 = [["Reçu de", d.clientNom + (d.clientEntreprise ? " (" + d.clientEntreprise + ")" : "")], ["La somme de", money(recu.montant)], ["En lettres", cap(enLettres(recu.montant)) + " francs CFA"], ["Mode de paiement", recu.mode], ["Nature du paiement", recu.nature], ["Document concerné", d.numero + (d.objet ? " — " + d.objet : "")]];
   p.autoTable({ startY: 65, margin: { left: M, right: M }, theme: "grid", body: rows1, styles: { fontSize: 9.5, cellPadding: 3, lineColor: GRID, textColor: INK }, columnStyles: { 0: { cellWidth: 48, fillColor: TINT, fontStyle: "bold" } } });
   let y = p.lastAutoTable.finalY + 8;
   p.setFont("helvetica", "bold").setFontSize(10).setTextColor(...RED).text("Situation du compte", M, y); p.setDrawColor(...RED).setLineWidth(0.4).line(M, y + 1.5, R, y + 1.5); y += 6;
@@ -1188,7 +1200,10 @@ async function pdfJob(label, mode, work) {
     await new Promise(r => requestAnimationFrame(() => setTimeout(r, 40)));
     const { p, name } = await work();
     await deliverPdf(p, name, mode || defMode());
-  } catch (e) { console.error(e); toast("Échec de la génération du PDF" + (e && e.code ? " : " + e.code : "") + "."); }
+  } catch (e) { console.error(e);
+    if (e && e.code === "solde") toast("Ce document est déjà soldé : aucun nouvel encaissement n'a été enregistré.");
+    else if (e && e.code === "depasse") toast(`Le montant dépasse le reste à payer (${money(e.reste)}) : rien n'a été enregistré.`);
+    else toast("Échec de la génération du PDF" + (e && e.code ? " : " + e.code : "") + "."); }
   finally { finishProgress(h); }
 }
 const makePdf = (d, mode) => pdfJob(d.type === "Proforma" ? "Génération de la proforma en cours…" : "Génération du devis en cours…", mode, async () => buildDoc(d, d.type));

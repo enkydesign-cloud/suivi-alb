@@ -1289,7 +1289,7 @@ const buildDoc = (d, kind) => modele() === "elegant" ? buildDocElegant(d, kind) 
 const buildRecu = (d, recu, docTotal, dejaPaye, reste) => modele() === "elegant" ? buildRecuElegant(d, recu, docTotal, dejaPaye, reste) : buildRecuClassic(d, recu, docTotal, dejaPaye, reste);
 
 // ---------- génération : l'indicateur s'affiche dès l'appui et dure jusqu'à la fin (calcul + enregistrement + remise du PDF) ----------
-const defMode = () => IS_MOBILE ? "share" : "download";
+const defMode = () => "download";   // sans bouton précis (ex. après un encaissement), le document est téléchargé
 async function pdfJob(label, mode, work) {
   const h = showProgress(label);
   try {
@@ -1310,15 +1310,31 @@ async function ensureFactureNumero(d) {
   await updateDoc(doc(db, "documents", d.id), { factureNumero: numero, factureDate: d.factureDate, factureHeure: hh });
 }
 const makeFacture = (d, mode) => pdfJob("Génération de la facture en cours…", mode, async () => { await ensureFactureNumero(d); return buildDoc(d, "Facture"); });
-async function deliverPdf(p, name, mode) {
-  const blob = p.output("blob");
-  if (mode === "share" && navigator.canShare) {
-    const file = new File([blob], name, { type: "application/pdf" });
-    if (navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: name }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
-  }
+// Télécharger = enregistre le fichier. Partager = ouvre UNIQUEMENT le menu de partage du téléphone (jamais de téléchargement de secours)
+function downloadBlob(blob, name) {
   const url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
   if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) window.open(url, "_blank");
   setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+function askShare(file, name) {
+  pickOpen(`<div class="pk-title">Document prêt</div><p class="muted" style="margin:0 4px 14px;word-break:break-all">${esc(name)}</p><button class="btn" style="width:100%" data-pk="share">${ico("share")}Partager</button><button class="btn grey" style="width:100%;margin-top:8px" data-pk="close">Fermer</button>`);
+  $("#pickPanel").onclick = async e => {
+    const b = e.target.closest("[data-pk]"); if (!b) return; if (b.dataset.pk === "close") return pickClose();
+    try { await navigator.share({ files: [file], title: name }); pickClose(); }
+    catch (er) { if (er && er.name === "AbortError") return pickClose(); toast("Le partage a échoué. Le fichier n'a pas été téléchargé."); }
+  };
+}
+async function deliverPdf(p, name, mode) {
+  const blob = p.output("blob");
+  if (mode !== "share") return downloadBlob(blob, name);
+  const file = new File([blob], name, { type: "application/pdf" });
+  if (!navigator.share || !navigator.canShare || !navigator.canShare({ files: [file] })) return toast("Le partage de fichiers n'est pas disponible sur cet appareil : utilisez le bouton de téléchargement.");
+  try { await navigator.share({ files: [file], title: name }); }
+  catch (e) {
+    if (e && e.name === "AbortError") return;                       // l'utilisateur a fermé le menu de partage
+    if (e && e.name === "NotAllowedError") return askShare(file, name);   // l'appui est trop ancien pour ouvrir le menu : un second appui suffit
+    toast("Le partage a échoué (" + ((e && e.name) || "erreur") + "). Le fichier n'a pas été téléchargé.");
+  }
 }
 
 // ---------- réglages ----------

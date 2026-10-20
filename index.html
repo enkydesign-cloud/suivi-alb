@@ -161,7 +161,27 @@ h2{font-size:23px;margin:22px 0 10px}
 .btn.grey{background:var(--bg2);color:var(--ink)}
 .btn.danger{background:transparent;color:var(--bad);border:1px solid var(--bad)}
 .btn.sm{padding:7px 12px;font-size:14.5px}
+.btn svg.filled{fill:currentColor;stroke:none}
 .btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:6px}
+.robot-fab{position:fixed;left:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:19;width:54px;height:54px;border-radius:50%;border:1.5px solid var(--rose);background:#141214;color:#ecc9bc;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 26px -10px rgba(20,18,20,.7);transition:transform .2s}
+.robot-fab svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.robot-fab:active{transform:scale(.92)}
+.robot-fab::after{content:"IA";position:absolute;top:-4px;right:-4px;background:var(--gold-grad);color:#fff;font-size:10px;font-weight:700;border-radius:99px;padding:1px 5px;font-family:var(--serif)}
+.bot-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.bot-head h3{font-size:21px;margin:0;line-height:1.15}.bot-head small{font-size:13px;line-height:1.3;display:block}
+.bot-ava{width:42px;height:42px;border-radius:50%;background:#141214;color:#ecc9bc;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bot-ava svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.bot-log{display:flex;flex-direction:column;gap:10px;max-height:46dvh;overflow:auto;padding:4px 2px 8px}
+.bm{max-width:90%;padding:10px 13px;border-radius:16px;font-size:15.5px;line-height:1.45;word-break:break-word}
+.bm.bot{align-self:flex-start;background:var(--bg2);border-bottom-left-radius:5px}
+.bm.me{align-self:flex-end;background:var(--ink);color:var(--bg);border-bottom-right-radius:5px}
+.bm p{margin:0 0 6px}.bm p:last-child{margin-bottom:0}.bm ul,.bm ol{margin:4px 0 6px 18px;padding:0}.bm li{margin:2px 0}
+.dots i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ink2);margin:0 2px;animation:botdot 1s infinite}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes botdot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+.chips.wrap{flex-wrap:wrap;overflow:visible;padding-top:6px}
+.bot-in{display:flex;gap:8px;margin-top:8px}.bot-in input{flex:1}
+@media(min-width:900px){.robot-fab{left:auto;right:32px;bottom:104px}}
 .seg{display:inline-flex}.seg .btn:first-child{border-radius:10px 0 0 10px}.seg .btn:last-child{border-radius:0 10px 10px 0;margin-left:2px;padding:7px 11px}.seg .btn:last-child svg{margin:0}
 input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--field);font-size:16px;transition:border-color .15s,box-shadow .15s}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--rose);box-shadow:0 0 0 3px color-mix(in srgb,var(--rose) 25%,transparent)}
@@ -210,6 +230,7 @@ canvas#pad{border:1.5px dashed var(--rose);border-radius:12px;width:100%;height:
 #dlProgress .dlp-bg{fill:none;stroke:var(--line);stroke-width:6}
 #dlProgress .dlp-bar{fill:none;stroke:var(--rose);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .1s linear}
 #dlProgress b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:19px;line-height:1}
+#dlProgress small{display:block;font-size:12px;color:var(--ink2);word-break:break-all;margin-top:3px}
 #dlProgress span{font-size:14px;color:var(--ink2);text-align:center;max-width:180px}
 
 /* ---------- Ordinateur ---------- */
@@ -325,6 +346,7 @@ const DEF_PDFRATIO = 0.5301;
   </div>
   <nav class="bottom" id="bottomNav"></nav>
 </div>
+<button id="robotBtn" class="robot-fab" data-act="bot" aria-label="Aide : assistant Suivi ALB" hidden></button>
 <div id="sheet" class="sheet" hidden><div class="panel" id="panel"></div></div>
 <div id="toast" hidden></div>
 <div id="pick" class="pick" hidden><div class="ppanel" id="pickPanel"></div></div>
@@ -384,10 +406,13 @@ const ICONS = {
   sun: "M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4",
   auto: "M12 3a9 9 0 1 0 0 18zM12 3v18",
   plus: "M12 5v14M5 12h14",
+  bot: "M7 8h10a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3zM12 8V5M12 5h.01M9 13.2h.01M15 13.2h.01M10 16.4h4M2.5 12v3M21.5 12v3",
   dl: "M12 4v11M7.5 11 12 15.5 16.5 11M5 20h14",
   share: "M12 15V3M8 7l4-4 4 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7",
   out: "M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4M16 8l4 4-4 4M20 12H9"
 };
+const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const icoShare = () => IS_IOS ? `<svg viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4M7 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-1"/></svg>` : `<svg class="filled" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>`;
 const ico = n => `<svg viewBox="0 0 24 24"><path d="${ICONS[n]}"/></svg>`;
 
 // ---------- état ----------
@@ -468,23 +493,25 @@ function showProgress(label) {
   }
   el.querySelector("#dlpLabel").textContent = label;
   const bar = el.querySelector(".dlp-bar"); const C = 2 * Math.PI * 27; bar.style.strokeDasharray = C; bar.style.strokeDashoffset = C;
-  el.querySelector("#dlpPct").textContent = "0%";
+  const pctEl = el.querySelector("#dlpPct"); pctEl.textContent = "0%"; pctEl.style.color = "";
   el.hidden = false; void el.offsetWidth; el.classList.add("on");
   let pct = 0;
   const timer = setInterval(() => {
     pct += (88 - pct) * 0.12 + 0.6; if (pct > 88) pct = 88;
-    el.querySelector("#dlpPct").textContent = Math.round(pct) + "%";
+    pctEl.textContent = Math.round(pct) + "%";
     bar.style.strokeDashoffset = C * (1 - pct / 100);
   }, 60);
   return { el, bar, C, timer };
 }
-function finishProgress(handle) {
+// doneHtml : message final (ex. « Téléchargement terminé ») affiché avec une coche avant la fermeture de la fenêtre
+function finishProgress(handle, doneHtml) {
   if (!handle) return;
   clearInterval(handle.timer);
-  handle.el.querySelector("#dlpPct").textContent = "100%";
   handle.bar.style.strokeDashoffset = 0;
+  const pct = handle.el.querySelector("#dlpPct"), lab = handle.el.querySelector("#dlpLabel");
+  if (doneHtml) { pct.textContent = "✓"; pct.style.color = "var(--ok)"; lab.innerHTML = doneHtml; } else pct.textContent = "100%";
   beep();
-  setTimeout(() => { handle.el.classList.remove("on"); setTimeout(() => { handle.el.hidden = true; }, 260); }, 500);
+  setTimeout(() => { handle.el.classList.remove("on"); setTimeout(() => { handle.el.hidden = true; pct.style.color = ""; }, 260); }, doneHtml ? 1600 : 500);
 }
 
 
@@ -502,8 +529,7 @@ applyTheme();
 
 // ---------- identité (logo, noms) ----------
 function refreshBrand() {
-  LOGO_MARK = settings.logo || DEF_MARK; LOGO_FULL = settings.logo || DEF_FULL; LOGO_PDF = settings.logo || DEF_PDF; LOGO_PDFMARK = settings.logo || DEF_PDFMARK;
-  if (settings.logo) { const im = new Image(); im.onload = () => { logoRatio = im.height / im.width; }; im.src = settings.logo; } else logoRatio = DEF_PDFRATIO;
+  LOGO_MARK = settings.logo || DEF_MARK; LOGO_FULL = settings.logo || DEF_FULL; LOGO_PDF = DEF_PDF; LOGO_PDFMARK = DEF_PDF; logoRatio = DEF_PDFRATIO;   // documents : logo officiel fixe
   document.querySelectorAll("img[data-logo]").forEach(i => { if (i.getAttribute("src") !== LOGO_MARK) i.src = LOGO_MARK; });
   document.querySelectorAll("img[data-logo-full]").forEach(i => { if (i.getAttribute("src") !== LOGO_FULL) i.src = LOGO_FULL; });
   document.querySelectorAll("[data-brand]").forEach(e => e.textContent = brandShort());
@@ -523,6 +549,7 @@ let splashDone = false;
 function hideSplash() { if (splashDone) return; splashDone = true; const left = Math.max(0, 800 - (Date.now() - splashAt)); setTimeout(() => { const s = $("#splash"); if (!s) return; splashActive = false; applyTheme(); s.classList.add("off"); setTimeout(() => s.remove(), 600); }, left); }
 onAuthStateChanged(auth, u => {
   user = u; unsub.forEach(f => f()); unsub = [];
+  { const rb = $("#robotBtn"); if (rb) rb.hidden = !u; if (!u) { botHist = []; botChat = null; } }
   if (!u) { $("#app").hidden = true; $("#login").hidden = false; hideSplash(); return; }
   $("#login").hidden = true; $("#app").hidden = false; buildNav(); applyTheme();
   const err = e => toast("Erreur de synchronisation : " + e.code);
@@ -579,6 +606,7 @@ function barChart(bk) {
 
 // ---------- navigation ----------
 function buildNav() {
+  $("#robotBtn").innerHTML = ico("bot");
   $("#sideNav").innerHTML = ROUTES.map(([r, l, i]) => `<button data-act="nav" data-r="${r}">${ico(i)}${l}</button>`).join("");
   const mob = ROUTES.filter(([r]) => ["home", "clients", "livrables", "editorial", "docs"].includes(r));
   $("#bottomNav").innerHTML = mob.map(([r, l, i]) => `<button data-act="nav" data-r="${r}">${ico(i)}${l}</button>`).join("");
@@ -627,7 +655,7 @@ const regDate = c => c.createdAt ? fdate(ymd(new Date(c.createdAt))) : "";
 function clientCard(c) {
   const liv = livrables.filter(l => l.clientId === c.id), enCours = liv.filter(l => !["Validé", "Livré"].includes(l.statut)).length, retard = liv.filter(livLate).length;
   return `<div class="card tap" data-act="viewClient" data-id="${c.id}"><div class="row" style="flex-wrap:nowrap"><div class="avatar">${esc(initials(c.nom))}</div><div style="flex:1;min-width:0"><b style="font-size:18px">${esc(c.nom)}</b>${c.entreprise ? ` <span class="muted">${esc(c.entreprise)}</span>` : ""}
-  <div class="muted">${c.pack ? esc(c.pack) : "Pas de pack"}${c.dateDebut ? " · début le " + fdate(c.dateDebut) : ""}</div>${regDate(c) ? `<div class="muted" style="font-size:13.5px">Enregistré le ${regDate(c)}</div>` : ""}</div>${badge(c.statut || "Prospect")}</div>
+  <div class="muted">${c.pack ? esc(c.pack) + (num(c.packPrix) ? " · " + money(c.packPrix) : "") : "Pas de pack"}${c.dateDebut ? " · début le " + fdate(c.dateDebut) : ""}</div>${regDate(c) ? `<div class="muted" style="font-size:13.5px">Enregistré le ${regDate(c)}</div>` : ""}</div>${badge(c.statut || "Prospect")}</div>
   ${liv.length ? `<div class="muted" style="margin-top:8px">${enCours} livrable(s) en cours${retard ? ` · <span class="late">${retard} en retard</span>` : ""}</div>` : ""}</div>`;
 }
 function viewClients() {
@@ -636,20 +664,24 @@ function viewClients() {
   return `${searchBox("Rechercher un client")}${chips(CLIENT_STATUTS, fClient, "fClient")}${list.length ? list.map(clientCard).join("") : `<div class="empty">${clients.length ? "Aucun client ne correspond." : "Aucun client pour le moment. Ajoutez le premier avec le bouton +."}</div>`}`;
 }
 function clientForm(c) {
-  edit = { ...c };
+  edit = { ...c }; const pkSel = c.pack && !packs().some(p => p.nom === c.pack) ? "__autre" : (c.pack || "");
   openSheet(`<h3>${c.id ? "Modifier le client" : "Nouveau client"}</h3>
   <label>Nom *</label><input id="c_nom" value="${esc(c.nom)}" autocomplete="off">
   <label>Entreprise</label><input id="c_ent" value="${esc(c.entreprise)}">
   <label>Téléphone / WhatsApp</label><input id="c_tel" type="tel" value="${esc(c.tel)}">
   <label>E-mail</label><input id="c_email" type="email" value="${esc(c.email)}">
-  <label>Pack choisi</label><select id="c_pack"><option value="">Aucun</option>${packs().map(p => `<option ${p.nom === c.pack ? "selected" : ""}>${esc(p.nom)}</option>`).join("")}</select>
+  <label>Pack choisi</label><select id="c_pack"><option value="">Aucun</option>${packs().map(p => `<option ${p.nom === pkSel ? "selected" : ""}>${esc(p.nom)}</option>`).join("")}<option value="__autre" ${pkSel === "__autre" ? "selected" : ""}>Autre (sur mesure)</option></select>
+  <div id="c_packx" ${pkSel ? "" : "hidden"}><div id="c_packnomw" ${pkSel === "__autre" ? "" : "hidden"}><label>Nom du pack ou de l'offre</label><input id="c_packnom" value="${pkSel === "__autre" ? esc(c.pack) : ""}"></div>
+  <label>Prix convenu (FCFA), facultatif</label><input id="c_packprix" inputmode="numeric" value="${esc(c.packPrix)}" placeholder="Vide = prix du pack"><p class="muted" style="margin:4px 0 0">Ce pack et ce prix sont ajoutés automatiquement aux devis et proformas de ce client.</p></div>
   <div class="grid"><div><label>Date de début</label><input id="c_debut" type="date" value="${esc(c.dateDebut)}"></div><div><label>Statut</label><select id="c_statut">${selectOpts(CLIENT_STATUTS, c.statut || "Prospect")}</select></div></div>
   <label>Notes</label><textarea id="c_notes">${esc(c.notes)}</textarea>
   <div class="row" style="margin-top:14px"><button class="btn" data-act="saveClient">Enregistrer</button><button class="btn grey" data-act="closeSheet">Annuler</button><span class="sp"></span>${c.id ? `<button class="btn danger sm" data-act="delClient">Supprimer</button>` : ""}</div>`);
 }
 async function saveClient() {
   const nom = $("#c_nom").value.trim(); if (!nom) return toast("Le nom est obligatoire.");
-  const c = { ...edit, nom, entreprise: $("#c_ent").value.trim(), tel: $("#c_tel").value.trim(), email: $("#c_email").value.trim(), pack: $("#c_pack").value, dateDebut: $("#c_debut").value, statut: $("#c_statut").value, notes: $("#c_notes").value.trim() };
+  const sel = $("#c_pack").value, packNom = sel === "__autre" ? $("#c_packnom").value.trim() : sel;
+  if (sel === "__autre" && !packNom) return toast("Indiquez le nom du pack ou de l'offre.");
+  const c = { ...edit, nom, entreprise: $("#c_ent").value.trim(), tel: $("#c_tel").value.trim(), email: $("#c_email").value.trim(), pack: packNom, packPrix: sel ? (num($("#c_packprix").value) || "") : "", dateDebut: $("#c_debut").value, statut: $("#c_statut").value, notes: $("#c_notes").value.trim() };
   await saveEntity("clients", c, "Client enregistré.");
 }
 async function saveEntity(col, obj, msg) {
@@ -742,17 +774,19 @@ function docCard(d) {
 const dlBtn = (act, id, label, shareLabel, cls, extra, share) => {
   const dl = `<button class="btn sm ${cls || "grey"}" data-act="${act}" data-id="${id}" ${extra || ""} data-mode="download">${ico("dl")}${label}</button>`;
   const ready = IS_MOBILE && share && pdfMeta.get(share.key) && pdfMeta.get(share.key).sig === share.sig;
-  return ready ? `<span class="seg">${dl}<button class="btn sm ${cls || "grey"}" data-act="shareStored" data-key="${esc(share.key)}" aria-label="${shareLabel}" title="${shareLabel}">${ico("share")}</button></span>` : dl;
+  return ready ? `<span class="seg">${dl}<button class="btn sm ${cls || "grey"}" data-act="shareStored" data-key="${esc(share.key)}" aria-label="${shareLabel}" title="${shareLabel}">${icoShare()}</button></span>` : dl;
 };
 function viewDocs() {
   const q = search.toLowerCase();
   const list = activeDocs().filter(d => (fDoc === "Tous" || d.type === fDoc) && (!q || (d.numero + " " + d.clientNom + " " + d.objet).toLowerCase().includes(q))).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   return `${searchBox("Rechercher un document ou un client")}${chips(["Devis", "Proforma"], fDoc, "fDoc")}${list.length ? list.map(docCard).join("") : `<div class="empty">Aucun document. Créez un devis avec le bouton +.</div>`}`;
 }
+const packLine = c => { if (!c || !c.pack) return null; const pk = packs().find(p => p.nom === c.pack), prix = num(c.packPrix) || (pk ? num(pk.prix) : 0);
+  return { d: pk ? "Pack " + pk.nom : c.pack, det: pk ? (pk.duree || "") : "", q: 1, pu: prix || "" }; };
 function newDocFrom(id) {
   const c = clientById(id) || {}, pk = packs().find(p => p.nom === c.pack);
   docForm({ type: "Devis", date: today(), validite: 30, contactId: c.id || "", clientNom: c.nom || "", clientEntreprise: c.entreprise || "", clientDesc: "", clientTel: c.tel || "", clientNiu: "", clientAdresse: "",
-    objet: "", section: "", intro: "", lignes: [{ d: pk ? "Pack " + pk.nom : "", det: pk ? (pk.duree || "") : "", q: 1, pu: pk ? num(pk.prix) || "" : "" }], forfait: "", remise: 0, tvaOn: false, tvaTaux: settings.tvaTaux ?? 19.25,
+    objet: "", section: "", intro: "", lignes: [packLine(c) || { d: "", det: "", q: 1, pu: "" }], forfait: "", remise: 0, tvaOn: false, tvaTaux: settings.tvaTaux ?? 19.25,
     totalLabel: "", noteTotal: "", acomptePct: 50, echeance: "", optOn: false, optTitre: "Option — Accompagnement mensuel récurrent", optIntro: "À activer après la mission ponctuelle, selon les besoins de suivi. Non compris dans le total ci-dessus.",
     optPacks: packs().map(p => p.nom), statut: "Brouillon", cond: settings.cond ?? DEFAULT_COND });
 }
@@ -1086,7 +1120,7 @@ function docElegant(d, kind) {
   let y = pdfTop(p);
   const pairs = [["N° :", numero], ["Date d'émission :", longFr(dt)]];
   if (isFac) pairs.push(["Référence :", d.numero]); else if (d.validite) pairs.push(["Validité de l'offre :", d.validite + " jours"]);
-  y = pdfTitleBlock(p, y, isFac ? "FACTURE" : isPro ? "FACTURE PROFORMA" : "DEVIS", d.objet || (isFac ? "Facture" : isPro ? "Facture proforma" : "Devis"), pairs);
+  y = pdfTitleBlock(p, y, isFac ? "FACTURE" : isPro ? "FACTURE PROFORMA" : "DEVIS", d.objet || ("Pour " + (d.clientEntreprise || d.clientNom || "votre dossier")), pairs);
   y = pdfParties(p, y, d, "À L'ATTENTION DE");
   if (d.section || d.intro) y = pdfH2(p, y, d.section || "Prestations", d.intro);
   const lines = d.lignes.filter(l => l.d), showQ = lines.some(l => num(l.q) !== 1);
@@ -1129,9 +1163,9 @@ function docElegant(d, kind) {
 function recuElegant(d, recu, docTotal, dejaPaye, reste) {
   const { jsPDF } = window.jspdf, p = new jsPDF({ unit: "mm", format: "a4", compress: true });
   let y = pdfTop(p, 32);
-  y = pdfTitleBlock(p, y, "REÇU DE PAIEMENT", "Reçu de paiement", [["N° :", recu.numero], ["Date :", longFr(recu.date)], ["Document :", d.numero]]);
+  y = pdfTitleBlock(p, y, "REÇU DE PAIEMENT", d.objet || ("Paiement : " + recu.nature), [["N° :", recu.numero], ["Date :", longFr(recu.date)], ["Document :", d.numero]]);
   y = pdfParties(p, y, d, "REÇU DE");
-  y = pdfTable(p, y, ["DÉSIGNATION", "DÉTAIL"], [["La somme de", money(recu.montant)], ["En lettres", cap(enLettres(recu.montant)) + " francs CFA"], ["Mode de paiement", recu.mode], ["Nature du paiement", recu.nature], ["Document concerné", d.numero + (d.objet ? " : " + d.objet : "")]], { 0: { cellWidth: 56 } }, INK, { greyCol: -1, pad: 2.4 });
+  y = pdfTable(p, y, ["DÉSIGNATION", "DÉTAIL"], [["La somme de", money(recu.montant)], ["En lettres", cap(enLettres(recu.montant)) + " francs CFA"], ["Mode de paiement", recu.mode], ["Nature du paiement", recu.nature]], { 0: { cellWidth: 56 } }, INK, { greyCol: -1, pad: 2.4 });
   y += 6;
   p.autoTable({ startY: y, margin: { left: 80, right: PM }, theme: "plain", styles: { font: "helvetica", fontSize: kf(10), cellPadding: 2.2 * K, textColor: INK }, columnStyles: { 1: { halign: "right", cellWidth: 40 } },
     body: [["Montant total du document (TTC)", money(docTotal)], ["Déjà réglé (ce paiement inclus)", money(dejaPaye)], ["Reste à payer", money(reste)]],
@@ -1294,17 +1328,18 @@ const buildRecu = (d, recu, docTotal, dejaPaye, reste) => { const r = modele() =
 // ---------- génération : l'indicateur s'affiche dès l'appui et dure jusqu'à la fin (calcul + enregistrement + remise du PDF) ----------
 const defMode = () => "download";   // sans bouton précis (ex. après un encaissement), le document est téléchargé
 async function pdfJob(label, mode, work) {
-  const h = showProgress(label);
+  const h = showProgress(label); let done = null;
   try {
     await new Promise(r => requestAnimationFrame(() => setTimeout(r, 40)));
     try { await libsReady; } catch (e) { toast("Bibliothèque PDF indisponible : vérifiez la connexion."); return; }
-    const res = await work();
-    await deliverPdf(res.p, res.name, mode || defMode(), res.meta);
+    const res = await work(), m = mode || defMode();
+    await deliverPdf(res.p, res.name, m, res.meta);
+    if (m !== "share") done = `Téléchargement terminé<small>${esc(res.name)}</small>`;
   } catch (e) { console.error(e);
     if (e && e.code === "solde") toast("Ce document est déjà soldé : aucun nouvel encaissement n'a été enregistré.");
     else if (e && e.code === "depasse") toast(`Le montant dépasse le reste à payer (${money(e.reste)}) : rien n'a été enregistré.`);
     else toast("Échec de la génération du PDF" + (e && e.code ? " : " + e.code : "") + "."); }
-  finally { finishProgress(h); }
+  finally { finishProgress(h, done); }
 }
 const makePdf = (d, mode) => pdfJob(d.type === "Proforma" ? "Génération de la proforma en cours…" : "Génération du devis en cours…", mode, async () => buildDoc(d, d.type));
 async function ensureFactureNumero(d) {
@@ -1317,7 +1352,7 @@ const makeFacture = (d, mode) => pdfJob("Génération de la facture en cours…"
 const omit = (o, ks) => Object.fromEntries(Object.entries(o).filter(([k]) => !ks.includes(k)));
 const stable = v => v && typeof v === "object" ? (Array.isArray(v) ? "[" + v.map(stable).join(",") + "]" : "{" + Object.keys(v).sort().map(k => JSON.stringify(k) + ":" + stable(v[k])).join(",") + "}") : JSON.stringify(v === undefined ? null : v);
 const hashStr = t => { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36) + "-" + t.length.toString(36); };
-const setSig = () => stable([settings.brand, settings.activite, settings.accroche, settings.slogan, settings.ville, settings.tel, settings.email, settings.web, settings.niu, settings.regime, settings.pay, settings.cond, settings.media, settings.pdfStyle, settings.tvaTaux, (settings.logo || "").length, (settings.signature || "").length, packs()]);
+const setSig = () => stable([settings.brand, settings.activite, settings.accroche, settings.slogan, settings.ville, settings.tel, settings.email, settings.web, settings.niu, settings.regime, settings.pay, settings.cond, settings.media, settings.pdfStyle, settings.tvaTaux, (settings.signature || "").length, packs()]);
 const pdfKeyOf = (kind, d, extra) => `${d.id}|${kind}${extra ? "|" + extra.numero : ""}`;
 const pdfSigOf = (kind, d, extra) => { const x = docs.find(k => k.id === d.id) || d;   // la copie est « à jour » tant que le document (et vos réglages) n'ont pas changé
   return hashStr(stable(kind === "rec" ? [extra, x.clientNom, x.clientEntreprise, totals(x).total, setSig()] : [omit(x, kind === "pdf" ? ["id", "statut", "relances", "supersededBy", "createdAt", "paiements", "factureNumero", "factureDate"] : ["id", "statut", "relances", "supersededBy", "createdAt"]), setSig()])); };
@@ -1356,7 +1391,7 @@ function downloadBlob(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 function askShare(file, name) {
-  pickOpen(`<div class="pk-title">Document prêt</div><p class="muted" style="margin:0 4px 14px;word-break:break-all">${esc(name)}</p><button class="btn" style="width:100%" data-pk="share">${ico("share")}Partager</button><button class="btn grey" style="width:100%;margin-top:8px" data-pk="close">Fermer</button>`);
+  pickOpen(`<div class="pk-title">Document prêt</div><p class="muted" style="margin:0 4px 14px;word-break:break-all">${esc(name)}</p><button class="btn" style="width:100%" data-pk="share">${icoShare()}Partager</button><button class="btn grey" style="width:100%;margin-top:8px" data-pk="close">Fermer</button>`);
   $("#pickPanel").onclick = async e => {
     const b = e.target.closest("[data-pk]"); if (!b) return; if (b.dataset.pk === "close") return pickClose();
     try { await navigator.share({ files: [file], title: name }); pickClose(); }
@@ -1394,7 +1429,7 @@ function viewSettings() {
     ${packs().map((p, i) => `<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:2px"><div class="grid"><div><label>Pack ${i + 1}</label><input id="pk_n${i}" value="${esc(p.nom)}"></div><div><label>Prix mensuel (FCFA)</label><input id="pk_p${i}" inputmode="numeric" value="${esc(p.prix)}"></div></div>
       <label>Durée</label><input id="pk_d${i}" value="${esc(p.duree)}" placeholder="3 à 6 mois, renouvelable"><label>Contenu principal</label><textarea id="pk_c${i}" style="min-height:70px">${esc(p.contenu)}</textarea></div>`).join("")}
     <p><button class="btn" data-act="saveSettings">Enregistrer les informations et les packs</button></p></div>
-  <div class="card"><b style="font-size:18px">Logo</b><p class="muted">Son logo est déjà en place. Importez-en un autre si besoin (PNG de préférence).</p>
+  <div class="card"><b style="font-size:18px">Logo</b><p class="muted">Logo des écrans de l'application (démarrage, connexion, en-tête). Les documents PDF utilisent toujours le logo officiel.</p>
     <img src="${LOGO_FULL}" alt="Logo" style="width:150px;height:auto;border-radius:10px;background:#f7f0e8;display:block;border:1px solid var(--line)">
     <div class="row" style="margin-top:8px"><label class="btn sm alt" style="margin:0">Importer un logo<input type="file" accept="image/*" id="logoFile" hidden></label>${s.logo ? `<button class="btn sm grey" data-act="logoReset">Revenir au logo d'origine</button>` : ""}</div></div>
   <div class="card"><b style="font-size:18px">Ma signature</b><p class="muted">Dessinez-la au doigt : elle sera ajoutée sur vos PDF.</p>
@@ -1466,7 +1501,175 @@ window.addEventListener("popstate", e => {
 $("#sheet").addEventListener("click", e => { if (e.target.id === "sheet") closeSheet(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#pick").hidden && !$("#sheet").hidden) closeSheet(); });
 const del = (col, id, what) => async () => { if (confirm(`Supprimer ${what} ? Cette action est définitive.`)) { try { await deleteDoc(doc(db, col, id)); closeSheet(); toast("Supprimé."); } catch (e) { toast("Échec : " + e.code); } } };
+// ---------- Assistant d'aide (robot) : guide de l'application + IA Gemini via Firebase AI Logic ----------
+const BOT_PAGES = {
+  home: { resume: "c'est la vue d'ensemble de votre activité.", elements: [
+    "Trois montants en haut : ce que vous avez **encaissé aujourd'hui, ce mois-ci et cette année**.",
+    "**Clients actifs** : le nombre de clients au statut Actif.",
+    "**Tâches en retard** : livrables dont la date limite est passée, plus paiements dont l'échéance est passée.",
+    "**À publier** : les publications du calendrier éditorial prévues aujourd'hui ou en retard.",
+    "**En retard** : la liste des livrables et des paiements en retard.",
+    "**Revenus** : un graphique par jour (14 jours), par mois (12 mois) ou par année (5 ans).",
+    "Un rappel apparaît si vous n'avez pas fait de sauvegarde depuis 14 jours."] },
+  clients: { resume: "vous y retrouvez tous vos clients.", elements: [
+    "Une **recherche** et des filtres : Prospect, Actif, En pause, Terminé.",
+    "Le bouton **+** (en bas à droite) ajoute un client.",
+    "Chaque carte montre le nom, l'entreprise, le pack (et le prix convenu), la date de début, la **date d'enregistrement**, le statut et les livrables en cours ou en retard.",
+    "Touchez une carte pour ouvrir la fiche : appeler, WhatsApp, e-mail, livrables, documents, et les boutons **+ Livrable**, **+ Devis** et **Modifier**."] },
+  livrables: { resume: "ce sont les productions à réaliser pour vos clients.", elements: [
+    "Statuts : **À produire, En cours, Validé, Livré**.",
+    "La **date limite** passe en rouge quand elle est dépassée.",
+    "Changez le statut directement depuis la carte (menu à droite).",
+    "Le bouton **+** ajoute un livrable, **Modifier** change ses informations."] },
+  editorial: { resume: "c'est votre calendrier de publications.", elements: [
+    "Plateformes : **Facebook, LinkedIn, TikTok**, avec date, heure et statut (À produire, Prêt, Programmé, Publié).",
+    "C'est un **rappel** : l'application ne publie pas à votre place.",
+    "Les publications du jour apparaissent aussi sur l'Accueil."] },
+  docs: { resume: "ce sont vos devis et proformas.", elements: [
+    "Chaque carte affiche le numéro, le client, le montant, la date, le statut (Brouillon, Envoyé, Accepté, Refusé) et ce qui est déjà réglé.",
+    "Le bouton avec la flèche de téléchargement (**Devis PDF / Proforma PDF**) télécharge le document.",
+    "**→ Proforma** transforme un devis en proforma.",
+    "**Avance / paiement** enregistre un encaissement et crée le reçu ; **Solder** encaisse le reste.",
+    "**Facture PDF** génère la facture avec le suivi des paiements.",
+    "Quand tout est payé, la carte indique **Soldé** et les boutons d'encaissement disparaissent.",
+    "Après un téléchargement, l'icône de **partage** apparaît à côté du bouton."] },
+  paiements: { resume: "c'est le suivi de l'argent (menu ☰ en haut à droite).", elements: [
+    "Trois montants : encaissé **aujourd'hui, ce mois, cette année**, avec l'évolution.",
+    "Un **calendrier de 7 jours** (Hier, Aujourd'hui, Demain) : le montant reçu chaque jour et un point orange pour les échéances. Touchez un jour pour voir ses paiements.",
+    "**À encaisser** : ce qui reste à payer, les retards, et les boutons Avance / paiement, Solder, Relancer.",
+    "**Statistiques** : graphique, nombre de paiements, paiement moyen, taux d'encaissement, répartition par mode de paiement et meilleurs clients.",
+    "**Derniers encaissements** : les paiements les plus récents."] },
+  settings: { resume: "vous y réglez l'application (menu ☰ en haut à droite).", elements: [
+    "**Apparence** : selon le téléphone, clair ou sombre.",
+    "**Mes informations** : nom, activité, ville, téléphone, e-mail, numéro de contribuable, moyens de paiement, modalités, TVA.",
+    "**Mes packs** : nom, prix mensuel, durée et contenu de chaque pack.",
+    "**Logo** (écrans de l'application) et **Ma signature** (ajoutée sur les PDF).",
+    "**Données** : export Excel, sauvegarde complète et restauration."] }
+};
+const BOT_TOPICS = [
+  { id: "debut", q: "Par où commencer ?", k: "commencer debuter demarrer premier premiere etape ordre utiliser", a: "1. **Réglages** : renseignez vos informations (nom, téléphone, numéro de contribuable, moyens de paiement), vérifiez vos packs et dessinez votre signature.\n2. **Clients** : ajoutez un client avec le bouton **+**.\n3. **Documents** : créez un devis pour ce client.\n4. Quand le client paie : **Avance / paiement** sur le document.\n5. Suivez tout dans **Paiements** et sur l'**Accueil**." },
+  { id: "client", q: "Ajouter un client", k: "ajouter creer nouveau client enregistrer fiche", a: "1. Ouvrez **Clients** et touchez le bouton **+**.\n2. Saisissez le nom (obligatoire), l'entreprise, le téléphone et l'e-mail.\n3. Choisissez le **pack**, la date de début et le statut.\n4. Touchez **Enregistrer**. La date d'enregistrement s'ajoute automatiquement." },
+  { id: "pack", q: "Choisir un pack pour un client", k: "pack offre formule sur mesure autre prix convenu choisir", a: "Dans la fiche du client, le menu **Pack choisi** propose vos packs et **Autre (sur mesure)**.\n- Avec « Autre », indiquez le nom de l'offre.\n- Le **prix convenu** (facultatif) remplace le prix du pack.\n- Ce pack et ce prix sont **ajoutés tout seuls** quand vous faites un devis ou une proforma pour ce client." },
+  { id: "devis", q: "Faire un devis", k: "devis creer faire nouveau document prestation", a: "1. **Documents** puis le bouton **+** (ou fiche client puis **+ Devis**).\n2. Choisissez le client dans la liste : ses informations et son pack se remplissent.\n3. Ajoutez ou modifiez les prestations (un prix à 0 s'affiche « Inclus »). Vous pouvez aussi saisir un forfait global, une remise ou la TVA.\n4. Touchez **Enregistrer** ou **Enregistrer + PDF**." },
+  { id: "proforma", q: "Faire une proforma", k: "proforma facture proforma acompte echeance modalites transformer", a: "Deux façons :\n- Sur un devis, touchez **→ Proforma**.\n- Ou créez un nouveau document et choisissez le type **Proforma**.\nLa proforma ajoute le pourcentage d'**acompte**, l'**échéance de paiement** et les **modalités**." },
+  { id: "encaisser", q: "Encaisser un paiement ou une avance", k: "encaisser paiement avance acompte recu argent payer paye regle", a: "1. Sur la carte du document, touchez **Avance / paiement**.\n2. Saisissez le montant, le mode (Virement, Espèces, Orange Money, MTN MoMo, Chèque), la nature et la date.\n3. Touchez **Enregistrer + reçu PDF**.\nLe montant ne peut pas dépasser le reste à payer." },
+  { id: "solder", q: "Solder un document", k: "solder solde reste payer tout regler completer", a: "**Solder** enregistre d'un coup le reste à payer, avec le mode du dernier paiement (ou ouvre le formulaire s'il n'y a pas encore de paiement). Quand tout est payé, la carte affiche **Soldé** et les boutons d'encaissement disparaissent." },
+  { id: "facture", q: "Faire une facture", k: "facture facturer fac facture pdf", a: "Sur la carte du document, touchez **Facture PDF**. La facture reprend les prestations, le suivi des paiements et le solde. Elle reçoit son numéro FAC-… la première fois." },
+  { id: "telecharger", q: "Télécharger un PDF", k: "telecharger telechargement pdf enregistrer fichier download", a: "Touchez le bouton avec la **flèche de téléchargement** (Devis PDF, Proforma PDF, Facture PDF ou Reçu PDF). Le chargement s'affiche, puis **Téléchargement terminé**.\nSi votre téléphone demande une confirmation, c'est Chrome : touchez **Télécharger** (ce réglage s'appelle « Demander où enregistrer les fichiers »)." },
+  { id: "partager", q: "Partager un PDF", k: "partager partage envoyer whatsapp mail envoyer icone", a: "1. **Téléchargez** d'abord le document.\n2. L'icône de **partage** apparaît à côté du bouton : touchez-la pour ouvrir le menu de partage du téléphone (WhatsApp, e-mail…).\nSi le document change (modification, nouveau paiement), retéléchargez-le pour partager la version à jour." },
+  { id: "recu", q: "Retrouver un reçu", k: "recu retelecharger detail paiements", a: "Un reçu est créé à chaque paiement. Pour le retélécharger : carte du document, puis **détail des paiements**, puis **Reçu PDF**." },
+  { id: "retirer", q: "Retirer un paiement saisi par erreur", k: "retirer supprimer paiement erreur annuler corriger trop", a: "Carte du document, **détail des paiements**, puis **Retirer** à côté du paiement. Le reçu déjà créé n'est pas supprimé." },
+  { id: "relancer", q: "Relancer un client", k: "relancer relance rappel impaye retard whatsapp", a: "**Paiements**, section **À encaisser**, puis **Relancer** : WhatsApp s'ouvre avec un message prêt (sans numéro, le message est copié) et la relance est notée." },
+  { id: "echeance", q: "Mettre une échéance de paiement", k: "echeance date limite paiement retard", a: "Dans la **proforma**, remplissez **Échéance de paiement**. Elle apparaît dans **Paiements** (point orange dans le calendrier), et le paiement passe **En retard** quand la date est dépassée." },
+  { id: "livrable", q: "Ajouter un livrable", k: "livrable livrables produire tache ajouter date limite", a: "**Livrables**, bouton **+** (ou fiche client puis **+ Livrable**) : titre, client, statut et date limite. Changez ensuite le statut depuis la carte." },
+  { id: "publication", q: "Planifier une publication", k: "publication publier facebook linkedin tiktok editorial calendrier post", a: "**Éditorial**, bouton **+** : sujet, plateforme, date, heure et statut. C'est un **rappel** : l'application ne publie pas à votre place." },
+  { id: "semaine", q: "Voir les paiements de la semaine", k: "semaine hier demain aujourd'hui calendrier paiements jour statistiques stats", a: "Menu **☰**, puis **Paiements**. Le calendrier de 7 jours montre le montant reçu chaque jour ; touchez un jour pour le détail. Les flèches ‹ › décalent de 7 jours. Les **Statistiques** sont plus bas (Jour, Mois, Année)." },
+  { id: "theme", q: "Changer le thème (clair ou sombre)", k: "theme sombre clair nuit mode apparence", a: "Touchez le **bouton rond en haut à droite** (demi-lune) : il alterne automatique, clair et sombre. Vous pouvez aussi le faire dans **Réglages**, rubrique Apparence." },
+  { id: "signature", q: "Ajouter ma signature", k: "signature signer dessiner", a: "**Réglages**, rubrique **Ma signature** : dessinez-la au doigt puis **Enregistrer la signature** (ou importez une image). Elle s'ajoute sur les PDF." },
+  { id: "packs", q: "Modifier mes packs et mes prix", k: "packs prix modifier tarif mensuel duree contenu", a: "**Réglages**, rubrique **Mes packs** : nom, prix mensuel, durée et contenu, puis **Enregistrer**. Ces prix servent à remplir automatiquement les devis." },
+  { id: "sauvegarde", q: "Sauvegarder mes données", k: "sauvegarde sauvegarder excel export restaurer donnees backup", a: "**Réglages**, rubrique **Données** : **Exporter en Excel**, **Sauvegarde complète (JSON)** et **Restaurer**. Une sauvegarde toutes les deux semaines est conseillée." },
+  { id: "installer", q: "Installer l'application sur le téléphone", k: "installer ecran accueil icone application telephone android iphone", a: "- **Android (Chrome)** : menu ⋮ puis **Ajouter à l'écran d'accueil** (ou Installer l'application).\n- **iPhone (Safari)** : bouton Partager puis **Sur l'écran d'accueil**." },
+  { id: "retour", q: "À quoi sert le bouton Retour ?", k: "retour bouton precedent quitter back", a: "Le bouton Retour du téléphone ferme d'abord la fenêtre ouverte, puis revient à la page précédente de l'application. Depuis l'**Accueil**, il quitte l'application." },
+  { id: "connexion", q: "Mot de passe oublié ou déconnexion", k: "mot de passe oublie connexion deconnecter deconnexion quitter login", a: "- **Mot de passe oublié** : sur l'écran de connexion, un e-mail de réinitialisation vous est envoyé.\n- **Se déconnecter** : menu **☰** puis **Se déconnecter** (ou dans Réglages)." },
+  { id: "statuts", q: "Que signifient les statuts ?", k: "statut statuts signifie significations prospect actif brouillon accepte", a: "- **Client** : Prospect, Actif, En pause, Terminé.\n- **Document** : Brouillon, Envoyé, Accepté, Refusé.\n- **Livrable** : À produire, En cours, Validé, Livré.\n- **Publication** : À produire, Prêt, Programmé, Publié." },
+  { id: "solde_bloque", q: "Pourquoi je ne peux plus encaisser ?", k: "plus encaisser bloque impossible bouton disparu disparait solde", a: "Le document est **soldé** : tout est déjà payé, donc les boutons d'encaissement disparaissent. Pour corriger un paiement en trop, retirez-le dans **détail des paiements**." },
+  { id: "supprimer", q: "Supprimer un client ou un document", k: "supprimer effacer supprime client document", a: "- **Client** : fiche, **Modifier**, puis **Supprimer**.\n- **Document** : bouton **Supprimer** sur la carte.\nAttention : c'est définitif." }
+];
+const BOT_SUGG = { home: ["debut", "semaine", "sauvegarde"], clients: ["client", "pack", "devis"], livrables: ["livrable", "statuts"], editorial: ["publication", "statuts"], docs: ["devis", "proforma", "encaisser", "telecharger", "partager"], paiements: ["semaine", "relancer", "encaisser"], settings: ["signature", "packs", "sauvegarde", "theme"] };
+const botNorm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const botGuideText = () => "PAGES DE L'APPLICATION (menu du bas : Accueil, Clients, Livrables, Éditorial, Documents ; le menu ☰ en haut à droite donne Paiements, Réglages et Se déconnecter ; le bouton rond en haut à droite change le thème) :\n"
+  + Object.entries(BOT_PAGES).map(([r, p]) => `\n## ${TITLES[r]}\n${p.resume}\n` + p.elements.map(e => "- " + e.replace(/\*\*/g, "")).join("\n")).join("\n")
+  + "\n\nPROCÉDURES :\n" + BOT_TOPICS.map(t => `\n### ${t.q}\n${t.a.replace(/\*\*/g, "")}`).join("\n");
+const BOT_SYSTEM = () => "Tu es l'assistant d'aide de l'application web « Suivi ALB », qui sert à une consultante en marketing et stratégie de marque (Douala, Cameroun) à suivre ses clients, ses paiements, ses livrables, son calendrier éditorial et à créer devis, proformas, factures et reçus en FCFA.\n"
+  + "Règles : réponds toujours en français, de façon courte, simple et chaleureuse, avec des étapes numérotées quand on demande comment faire. Appuie-toi UNIQUEMENT sur le guide ci-dessous ; si l'information n'y figure pas, dis-le honnêtement et indique la page la plus proche, sans jamais inventer de bouton ou de fonction. Ne demande jamais de mots de passe, de numéros ou de données de clients, et ne donne pas de conseil juridique ou fiscal. Si la question n'a aucun rapport avec l'application, rappelle gentiment ton rôle. Les messages commencent par la page où se trouve l'utilisateur : tiens-en compte.\n\nGUIDE DE L'APPLICATION :\n" + botGuideText();
+const mdLite = t => { const lines = esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").split("\n"); let out = "", ul = false, ol = false, m;
+  const close = () => { if (ul) { out += "</ul>"; ul = false; } if (ol) { out += "</ol>"; ol = false; } };
+  for (const ln of lines) {
+    if ((m = ln.match(/^\s*[-*•]\s+(.*)/))) { if (!ul) { close(); out += "<ul>"; ul = true; } out += "<li>" + m[1] + "</li>"; }
+    else if ((m = ln.match(/^\s*\d+[.)]\s+(.*)/))) { if (!ol) { close(); out += "<ol>"; ol = true; } out += "<li>" + m[1] + "</li>"; }
+    else if (ln.trim()) { close(); out += "<p>" + ln + "</p>"; } else close();
+  } close(); return out || "<p>…</p>"; };
+// --- IA : Gemini via Firebase AI Logic (la clé reste chez Google/Firebase, jamais dans ce code) ; chargée seulement à la première question
+const AI_VER = "11.10.0", AI_BASE = `https://www.gstatic.com/firebasejs/${AI_VER}/`;
+const AI_MODELS = ["gemini-3.6-flash", "gemini-3-flash-preview", "gemini-2.5-flash"];   // si un modèle est retiré, le suivant est essayé automatiquement
+const APPCHECK_SITE_KEY = "";   // clé reCAPTCHA v3 d'App Check (à renseigner après son activation dans la console Firebase)
+const BOT_DAILY_MAX = 30;
+let aiPromise = null, botChat = null, botBusy = false, botDownUntil = 0, botHist = [];
+const botModelIdx = () => Math.min(+localStorage.getItem("botModelIdx") || 0, AI_MODELS.length - 1);
+function loadAI() {
+  return aiPromise || (aiPromise = (async () => {
+    const [appMod, aiMod] = await Promise.all([import(AI_BASE + "firebase-app.js"), import(AI_BASE + "firebase-ai.js")]);
+    const app2 = appMod.initializeApp(firebaseConfig, "ai");
+    if (APPCHECK_SITE_KEY) { const ac = await import(AI_BASE + "firebase-app-check.js"); ac.initializeAppCheck(app2, { provider: new ac.ReCaptchaV3Provider(APPCHECK_SITE_KEY), isTokenAutoRefreshEnabled: true }); }
+    return { ai: aiMod.getAI(app2, { backend: new aiMod.GoogleAIBackend() }), mod: aiMod };
+  })().catch(e => { aiPromise = null; throw e; }));
+}
+async function aiAsk(text, onChunk) {
+  const { ai, mod } = await loadAI();
+  for (let n = 0; n < AI_MODELS.length; n++) {
+    const name = AI_MODELS[botModelIdx()];
+    try {
+      if (!botChat || botChat.name !== name) botChat = { name, chat: mod.getGenerativeModel(ai, { model: name, systemInstruction: BOT_SYSTEM(), generationConfig: { maxOutputTokens: 900, temperature: 0.3 } }).startChat({ history: [] }) };
+      const r = await botChat.chat.sendMessageStream(text); let acc = "";
+      for await (const c of r.stream) { acc += c.text(); onChunk(acc); }
+      if (!acc.trim()) { acc = (await r.response).text(); onChunk(acc); }
+      return acc;
+    } catch (e) {
+      if (/not.?found|404|not supported|deprecated|no longer|retired/i.test(String((e && e.message) || e)) && botModelIdx() < AI_MODELS.length - 1) { localStorage.setItem("botModelIdx", botModelIdx() + 1); botChat = null; continue; }
+      throw e;
+    }
+  }
+  throw new Error("Aucun modèle disponible");
+}
+function botUse() { const d = today(); let o = {}; try { o = JSON.parse(localStorage.getItem("botUse") || "{}"); } catch (e) {} if (o.d !== d) o = { d, n: 0 }; if (o.n >= BOT_DAILY_MAX) return false; o.n++; localStorage.setItem("botUse", JSON.stringify(o)); return true; }
+// --- réponses locales (guide) : instantanées, sans IA
+function botLocal(text) {
+  const w = botNorm(text).split(/[^a-z0-9']+/).filter(x => x.length > 2); if (!w.length) return null; let best = null, bs = 0;
+  BOT_TOPICS.forEach(t => { const keys = botNorm(t.k + " " + t.q).split(/[^a-z0-9']+/); let sc = 0; w.forEach(x => { if (keys.some(k => k === x || (x.length > 4 && k.startsWith(x.slice(0, 5))))) sc++; }); if (sc > bs) { bs = sc; best = t; } });
+  return bs >= 1 ? best : null;
+}
+const botPageText = r => { const p = BOT_PAGES[r]; return `**${TITLES[r]}** : ${p.resume}\n\n` + p.elements.map(e => "- " + e).join("\n"); };
+// --- interface
+function botPush(role, text) { const m = { r: role, t: text }; botHist.push(m); const log = $("#botLog"); if (log) { const el = document.createElement("div"); el.className = "bm " + role; m.el = el; log.appendChild(el); botDraw(m); log.scrollTop = log.scrollHeight; } return m; }
+function botDraw(m) { if (!m.el || !m.el.isConnected) return; m.el.innerHTML = m.typing ? `<span class="dots"><i></i><i></i><i></i></span>` : (m.r === "me" ? esc(m.t) : mdLite(m.t)); const log = $("#botLog"); if (log) log.scrollTop = log.scrollHeight; }
+function botSet(m, text) { m.typing = false; m.t = text; botDraw(m); }
+function botChips() {
+  const ids = BOT_SUGG[route] || ["debut"], ch = [`<button data-act="botPage">Expliquer cette page</button>`].concat(ids.map(id => `<button data-act="botTopic" data-id="${id}">${esc(BOT_TOPICS.find(t => t.id === id).q)}</button>`));
+  if (!ids.includes("debut")) ch.push(`<button data-act="botTopic" data-id="debut">Par où commencer ?</button>`);
+  const el = $("#botChips"); if (el) el.innerHTML = ch.join("");
+}
+function openBot() {
+  openSheet(`<div class="bot-head"><span class="bot-ava">${ico("bot")}</span><div style="flex:1"><h3>Assistant Suivi ALB</h3><small class="muted">Je vous guide pas à pas dans l'application</small></div><button class="btn sm grey" data-act="botClear" aria-label="Effacer la conversation">Effacer</button></div>
+  <div id="botLog" class="bot-log" aria-live="polite"></div><div id="botChips" class="chips wrap"></div>
+  <div class="bot-in"><input id="botInput" maxlength="400" placeholder="Posez votre question…" enterkeyhint="send" autocomplete="off"><button class="btn" data-act="botSend" aria-label="Envoyer">Envoyer</button></div>`);
+  if (!botHist.length) botPush("bot", `Bonjour ! Je suis l'assistant de **Suivi ALB**. Je peux vous expliquer chaque page et vous guider pas à pas.\n\nVous êtes sur **${TITLES[route]}** : ${BOT_PAGES[route].resume} Touchez « Expliquer cette page » ou posez-moi une question.`);
+  else botHist.forEach(m => { const el = document.createElement("div"); el.className = "bm " + m.r; m.el = el; $("#botLog").appendChild(el); botDraw(m); });
+  botChips(); $("#botLog").scrollTop = $("#botLog").scrollHeight;
+}
+async function botSend() {
+  const inp = $("#botInput"); if (!inp || botBusy) return; const text = inp.value.trim(); if (!text) return; inp.value = ""; botBusy = true;
+  botPush("me", text); const m = botPush("bot", ""); m.typing = true; botDraw(m);
+  try {
+    if (!botUse()) { const e = new Error("limite"); e.kind = "limit"; throw e; }
+    if (!navigator.onLine) { const e = new Error("hors ligne"); e.kind = "offline"; throw e; }
+    if (botDownUntil > Date.now()) { const e = new Error("indisponible"); e.kind = "down"; throw e; }
+    await aiAsk(`(Page actuelle : ${TITLES[route]})\n${text}`, acc => botSet(m, acc));
+  } catch (e) {
+    console.warn("Assistant IA :", e);
+    const msg = String((e && e.message) || e), kind = e.kind || (/quota|429|resource.?exhausted|rate/i.test(msg) ? "quota" : /fetch|network|offline/i.test(msg) ? "offline" : "down");
+    if (kind === "down" || kind === "quota") botDownUntil = Date.now() + (kind === "quota" ? 60000 : 300000);
+    const note = { limit: "Vous avez atteint la limite de questions pour aujourd'hui. Voici l'aide du guide :", quota: "L'assistant IA est très sollicité en ce moment. Voici l'aide du guide :", offline: "Pas de connexion : l'IA n'est pas disponible. Voici l'aide du guide :", down: "L'assistant IA n'est pas disponible pour le moment. Voici l'aide du guide :" }[kind];
+    const t = botLocal(text);
+    botSet(m, t ? `${note}\n\n**${t.q}**\n${t.a}` : `${note}\n\nJe n'ai pas trouvé de réponse précise. Choisissez un sujet ci-dessous, ou touchez « Expliquer cette page ».`);
+  }
+  botBusy = false;
+}
+
 const acts = {
+  bot: () => openBot(), botSend: () => botSend(),
+  botTopic: d => { const t = BOT_TOPICS.find(x => x.id === d.id); if (!t) return; botPush("me", t.q); botPush("bot", t.a); },
+  botPage: () => { botPush("me", "Expliquer cette page"); botPush("bot", botPageText(route)); },
+  botClear: () => { botHist = []; botChat = null; $("#botLog").innerHTML = ""; botPush("bot", "Conversation effacée. Que puis-je vous expliquer ?"); botChips(); },
   shareStored: d => shareStored(d.key),
   recuPdf: (d, el) => { const x = docs.find(k => k.id === d.id); if (!x) return; const i = +d.i, ps = x.paiements || [], r = ps[i]; if (!r) return;
     const total = totals(x).total, paye = ps.slice(0, i + 1).reduce((a, q) => a + num(q.montant), 0);
@@ -1496,13 +1699,17 @@ const acts = {
   logoReset: async () => { try { const { logo, ...r } = settings; await setDoc(doc(db, "settings", "main"), r); toast("Logo d'origine rétabli."); } catch (e) { toast("Échec : " + e.code); } },
   exportXlsx, backup
 };
+document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target && e.target.id === "botInput") { e.preventDefault(); botSend(); } });
 document.addEventListener("click", e => { const el = e.target.closest("[data-act]"); if (el && acts[el.dataset.act]) { if (el.tagName === "A") e.preventDefault(); acts[el.dataset.act](el.dataset, el); } });
 document.addEventListener("change", async e => {
   const t = e.target;
   const quick = { livStatut: ["livrables", "Livrable"], postStatut: ["posts", "Publication"] }[t.dataset.change];
   if (quick) { try { await updateDoc(doc(db, quick[0], t.dataset.id), { statut: t.value }); toast(quick[1] + " : " + t.value); } catch (er) { toast("Échec : " + er.code); } }
   if (t.dataset.change === "docStatut") setDocStatut(t.dataset.id, t.value);
-  if (t.id === "d_contact") { const c = clientById(t.value); if (c) { $("#d_nom").value = c.nom || ""; $("#d_ent").value = c.entreprise || ""; $("#d_tel").value = c.tel || ""; } }
+  if (t.id === "c_pack") { $("#c_packx").hidden = !t.value; $("#c_packnomw").hidden = t.value !== "__autre"; }
+  if (t.id === "d_contact") { const c = clientById(t.value); if (c) { $("#d_nom").value = c.nom || ""; $("#d_ent").value = c.entreprise || ""; $("#d_tel").value = c.tel || "";
+    const pl = packLine(c);   // le pack du client est ajouté tout seul au document
+    if (pl) { readDocFields(); edit.lignes = edit.lignes.filter(l => l.d || num(l.pu)); if (!edit.lignes.some(l => l.d === pl.d)) edit.lignes.unshift(pl); drawLines(); refreshTot(); toast("Pack « " + c.pack + " » ajouté au document."); } } }
   if (t.id === "d_optOn") { readDocFields(); docForm(edit); }
   if (t.id === "d_type") { readDocFields(); if (edit.type === "Proforma" && !edit.cond) edit.cond = settings.cond ?? DEFAULT_COND; docForm(edit); }
   else if (["d_date", "d_remise", "d_acompte", "d_valid", "d_tvat", "d_tvaon"].includes(t.id)) refreshTot();
